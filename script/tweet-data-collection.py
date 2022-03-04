@@ -92,7 +92,7 @@ o_auth_handler.set_access_token(access_token, access_token_secret)
 tweepy_api = tweepy.API(o_auth_handler, wait_on_rate_limit=True)
 
 
-screen_name = "agriculture_ie"
+screen_name = "Discord"
 
 
 tweets = tweepy_api.user_timeline(
@@ -110,37 +110,68 @@ for info in tweets[:3]:
     print("\n")
 
 
+len(tweets)
+
+
+screen_names = ["discord", "tinder"]
+
 all_tweets = []
 all_tweets.extend(tweets)
 oldest_id = tweets[-1].id
-while True:
-    tweets = tweepy_api.user_timeline(
-        screen_name=screen_name,
-        count=200,# 200 is the maximum allowed count
-        include_rts=False,
-        max_id=oldest_id - 1,
-        # Necessary to keep full_text
-        # otherwise only the first 140 words are extracted
-        tweet_mode='extended')
-    if len(tweets) == 0:
-        break
-    oldest_id = tweets[-1].id
-    all_tweets.extend(tweets)
-    print('N of tweets downloaded till now {}'.format(len(all_tweets)))
+for screen_name in screen_names:
+    while True:
+        tweets = tweepy_api.user_timeline(
+            screen_name=screen_name,
+            count=200,# 200 is the maximum allowed count
+            include_rts=False,
+            max_id=oldest_id - 1,
+            # Necessary to keep full_text
+            # otherwise only the first 140 words are extracted
+            tweet_mode='extended')
+        if len(tweets) == 0:
+            break
+        oldest_id = tweets[-1].id
+        all_tweets.extend(tweets)
+        print('N of tweets downloaded till now {}'.format(len(all_tweets)))
 
 
 tweets_list: list = [[
-    tweet.id_str, tweet.user.screen_name, tweet.created_at,
-    tweet.favorite_count, tweet.retweet_count,
+    tweet.id_str, 
+    tweet.user.screen_name, 
+    tweet.created_at,
+    tweet.favorited,
+    tweet.retweeted,
+    tweet.lang,
+    tweet.place,
+    tweet.coordinates, 
+    tweet.geo,
+    tweet.user,
+    tweet.entities,
+    tweet.in_reply_to_user_id,
+    tweet.in_reply_to_status_id,
+    tweet.favorite_count, 
+    tweet.retweet_count,
     tweet.full_text.encode("utf-8").decode("utf-8")
-] for idx, tweet in enumerate(all_tweets)]
+] for _, tweet in enumerate(all_tweets)]
 
 
-tweet_columns = [
-    "id", "screen_name", "created_at", "favorite_count", "retweet_count",
-    "text"
+tweet_columns: list = [
+    "id", "screen_name", "created_at", "favourited", "retweeted", "language",
+    "place", "coordinates", "geo", "user", "entities", "user identifier",
+    "status identifier", "favorite_count", "retweet_count", "text"
 ]
-dataframe = DataFrame(tweets_list, columns=tweet_columns)
-dataframe.to_csv('./assets/twitter-agriculture-ie.csv', index=False)
+dataframe: DataFrame = DataFrame(tweets_list, columns=tweet_columns)
+dataframe.to_csv('./assets/twitter-Churn-ie.csv', index=False)
 dataframe.head(3)
+
+
+dataframe
+
+
+dataframe=dataframe[["text", "favorite_count", "retweet_count"]]
+
+
+dataframe.sort_values(
+    by=["text", "favorite_count", "retweet_count"],
+    ascending=[False, True, True])[["text", "favorite_count"]].head(10)
 
