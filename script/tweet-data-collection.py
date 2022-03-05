@@ -89,54 +89,18 @@ consumer_secret = config_parser["Twitter"]["ApiKeySecret"]
 
 o_auth_handler = tweepy.OAuthHandler(consumer_key, consumer_secret)
 o_auth_handler.set_access_token(access_token, access_token_secret)
-tweepy_api = tweepy.API(o_auth_handler, wait_on_rate_limit=True)
+api = tweepy.API(o_auth_handler)
+#for authentication between the config file and the twitter API
+
+public_tweets = api.home_timeline()
 
 
-screen_name = "Discord"
-
-
-tweets = tweepy_api.user_timeline(
-    screen_name=screen_name,
-    count=200,  # 200 is the maximum allowed count
-    include_rts=False,
-    tweet_mode="extended"
-)  # Necessary to keep full_text otherwise only the first 140 words are extracted
-
-
-for info in tweets[:3]:
-    print("ID: {}".format(info.id))
-    print(info.created_at)
-    print(info.full_text)
-    print("\n")
-
-
-len(tweets)
-
-
-screen_names = ["discord", "tinder"]
-
-all_tweets = []
-all_tweets.extend(tweets)
-oldest_id = tweets[-1].id
-for screen_name in screen_names:
-    while True:
-        tweets = tweepy_api.user_timeline(
-            screen_name=screen_name,
-            count=200,# 200 is the maximum allowed count
-            include_rts=False,
-            max_id=oldest_id - 1,
-            # Necessary to keep full_text
-            # otherwise only the first 140 words are extracted
-            tweet_mode='extended')
-        if len(tweets) == 0:
-            break
-        oldest_id = tweets[-1].id
-        all_tweets.extend(tweets)
-        print('N of tweets downloaded till now {}'.format(len(all_tweets)))
-
-
-tweets_list: list = [[
-    tweet.id_str, 
+columns = ["id", "screen_name", "created_at", "favourited", "retweeted", "language",
+    "place", "coordinates", "geo", "user", "entities", "user identifier",
+    "status identifier", "favorite_count", "retweet_count", "text"]
+data = []
+for tweet in public_tweets:
+    data.append([ tweet.id_str, 
     tweet.user.screen_name, 
     tweet.created_at,
     tweet.favorited,
@@ -150,19 +114,15 @@ tweets_list: list = [[
     tweet.in_reply_to_user_id,
     tweet.in_reply_to_status_id,
     tweet.favorite_count, 
-    tweet.retweet_count,
-    tweet.full_text.encode("utf-8").decode("utf-8")
-] for _, tweet in enumerate(all_tweets)]
+    tweet.retweet_count])
+
+dataframe = DataFrame.DataFrame(data, columns=columns)
 
 
-tweet_columns: list = [
-    "id", "screen_name", "created_at", "favourited", "retweeted", "language",
-    "place", "coordinates", "geo", "user", "entities", "user identifier",
-    "status identifier", "favorite_count", "retweet_count", "text"
-]
-dataframe: DataFrame = DataFrame(tweets_list, columns=tweet_columns)
-dataframe.to_csv('./assets/twitter-Churn-ie.csv', index=False)
-dataframe.head(3)
+len(tweets)
+
+
+dataframe.to_csv('tweets.csv')
 
 
 dataframe
